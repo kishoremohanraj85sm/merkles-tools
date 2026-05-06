@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merkles × EPT — Standard Operating Procedure</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#028090;--teal-l:#E1F5EE;--teal-d:#085041;--teal-m:#0F6E56;
+  --orange:#F47B20;--orange-l:#FEF0E3;
+  --purple:#534AB7;--purple-l:#EEEDFE;--purple-d:#26215C;
+  --amber:#BA7517;--amber-l:#FAEEDA;--amber-d:#412402;
+  --blue:#185FA5;--blue-l:#E6F1FB;
+  --green:#3B6D11;--green-l:#EAF3DE;--green-d:#173404;
+  --navy:#0D1B2A;--text:#1A2E2B;--muted:#5C7272;
+  --border:#D4E8E3;--bg:#F7F9F8;--white:#fff;
+  --danger:#A32D2D;--danger-l:#FCEBEB;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+.hdr{background:var(--navy);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--orange);flex-shrink:0}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.logo{background:var(--orange);color:#fff;font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;letter-spacing:.05em}
+.hdr-title{color:#fff;font-size:15px;font-weight:500}
+.hdr-sub{color:#A8C9C3;font-size:11px;margin-top:2px}
+.hdr-badge{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#A8C9C3;font-size:11px;padding:4px 12px;border-radius:20px}
+
+/* ROLE FILTER BAR */
+.role-bar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.role-label{font-size:11.5px;color:var(--muted);font-weight:500;margin-right:4px}
+.role-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;font-weight:500;transition:all .15s}
+.role-btn:hover{border-color:var(--teal);color:var(--teal)}
+.role-btn.active{border-color:var(--teal);background:var(--teal);color:#fff}
+.role-btn[data-role="sourcing"].active{background:var(--green);border-color:var(--green)}
+.role-btn[data-role="recruiter"].active{background:var(--purple);border-color:var(--purple)}
+.role-btn[data-role="kishore"].active{background:var(--amber);border-color:var(--amber)}
+.role-btn[data-role="ept"].active{background:var(--teal);border-color:var(--teal)}
+
+/* MAIN LAYOUT */
+.main{display:grid;grid-template-columns:240px 1fr;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--white);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-section{padding:12px 0 4px}
+.sidebar-section-label{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 16px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:12.5px;color:var(--muted);border-left:3px solid transparent;transition:all .15s;line-height:1.35}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--teal-l);color:var(--teal-d);border-left-color:var(--teal);font-weight:500}
+.nav-item.hidden{display:none}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nav-dot.all{background:var(--teal)}
+.nav-dot.sourcing{background:var(--green)}
+.nav-dot.recruiter{background:var(--purple)}
+.nav-dot.kishore{background:var(--amber)}
+.nav-dot.ept{background:var(--teal)}
+.nav-dot.shared{background:var(--muted)}
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.5}
+
+/* CONTENT PANEL */
+.content{overflow-y:auto;padding:0}
+.section-panel{display:none;padding:28px 32px;max-width:860px}
+.section-panel.active{display:block}
+
+/* CONTENT TYPOGRAPHY */
+.sec-eyebrow{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.sec-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;color:var(--text);margin-bottom:6px;line-height:1.3}
+.sec-sub{font-size:13.5px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+.sec-divider{height:1px;background:var(--border);margin:20px 0}
+
+/* STEP CARDS */
+.step-card{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.step-card.hidden{display:none}
+.step-header{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .15s}
+.step-header:hover{background:var(--bg)}
+.step-header.open{background:var(--bg)}
+.step-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0}
+.step-meta{flex:1}
+.step-actor{font-size:10.5px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+.step-title{font-size:14px;font-weight:500;color:var(--text)}
+.step-chevron{font-size:12px;color:var(--muted);transition:transform .2s}
+.step-chevron.open{transform:rotate(180deg)}
+.step-body{display:none;padding:0 18px 16px;border-top:1px solid var(--border)}
+.step-body.open{display:block}
+
+/* CONTENT ELEMENTS */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.checklist li{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--muted);line-height:1.55}
+.checklist li::before{content:'';width:15px;height:15px;min-width:15px;border-radius:4px;border:1.5px solid var(--teal);margin-top:1px}
+.sub-label{font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin:14px 0 6px}
+.note-box{border-radius:8px;padding:11px 14px;font-size:12.5px;line-height:1.6;margin:12px 0}
+.note-box.warning{background:var(--orange-l);border-left:3px solid var(--orange);color:#633806}
+.note-box.warning strong{color:var(--orange)}
+.note-box.tip{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal-d)}
+.note-box.tip strong{color:var(--teal)}
+.note-box.handoff{background:var(--green-l);border-left:3px solid var(--green);color:var(--green-d)}
+.note-box.purple{background:var(--purple-l);border-left:3px solid var(--purple);color:var(--purple-d)}
+.body-text{font-size:13px;color:var(--muted);line-height:1.7;margin:6px 0}
+
+/* TABLES */
+.sop-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px}
+.sop-table th{background:var(--teal);color:#fff;padding:9px 12px;text-align:left;font-weight:500}
+.sop-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+.sop-table tr:nth-child(even) td{background:var(--bg)}
+.sop-table tr:last-child td{border-bottom:none}
+
+/* TWO COLUMN DO/DONT */
+.do-dont{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.do-col,.dont-col{border-radius:8px;overflow:hidden}
+.do-col .col-head{background:var(--green);color:#fff;padding:8px 14px;font-size:12px;font-weight:500}
+.dont-col .col-head{background:var(--danger);color:#fff;padding:8px 14px;font-size:12px;font-weight:500}
+.do-col .col-body,.dont-col .col-body{background:var(--white);border:1px solid var(--border);border-top:none;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.do-col .col-body li,.dont-col .col-body li{font-size:12px;color:var(--muted);line-height:1.5;display:flex;gap:7px;align-items:flex-start}
+.do-col .col-body li::before{content:'✓';color:var(--green);font-weight:500;flex-shrink:0}
+.dont-col .col-body li::before{content:'✕';color:var(--danger);font-weight:500;flex-shrink:0}
+
+/* STAT STRIP */
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.stat-card{background:var(--teal-l);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.stat-num{font-family:'Playfair Display',serif;font-size:24px;color:var(--teal);font-weight:500}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* ACTOR BADGE */
+.actor-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;margin-bottom:14px}
+
+/* SALARY CALC BOX */
+.calc-box{background:var(--navy);border-radius:10px;padding:16px 20px;margin:12px 0;color:#fff}
+.calc-box h4{font-size:13px;font-weight:500;color:#A8C9C3;margin-bottom:10px}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:12.5px}
+.calc-row:last-child{border-bottom:none;padding-top:10px;margin-top:4px}
+.calc-row .lbl{color:#A8C9C3}
+.calc-row .val{color:#fff;font-weight:500}
+.calc-row.result .val{color:var(--orange);font-size:14px}
+
+/* EMPLOYMENT CARDS */
+.emp-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+.emp-card{border-radius:8px;padding:14px;border:1px solid var(--border)}
+.emp-card h4{font-size:13px;font-weight:500;margin-bottom:8px}
+.emp-card ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.emp-card ul li{font-size:12px;color:var(--muted);line-height:1.5;padding-left:12px;position:relative}
+.emp-card ul li::before{content:'·';position:absolute;left:0;color:var(--teal);font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <span class="logo">MERKLES × EPT</span>
+    <div>
+      <div class="hdr-title">Standard Operating Procedure</div>
+      <div class="hdr-sub">Indonesia Recruitment — Version 1.0 · May 2026</div>
+    </div>
+  </div>
+  <span class="hdr-badge">Internal — Merkles Team Only</span>
+</div>
+
+<!-- ROLE FILTER -->
+<div class="role-bar">
+  <span class="role-label">View as:</span>
+  <button class="role-btn active" data-role="all" onclick="filterRole('all')">All Roles</button>
+  <button class="role-btn" data-role="sourcing" onclick="filterRole('sourcing')">Merkles Sourcing</button>
+  <button class="role-btn" data-role="recruiter" onclick="filterRole('recruiter')">Merkles Recruiter</button>
+  <button class="role-btn" data-role="kishore" onclick="filterRole('kishore')">Kishore</button>
+  <button class="role-btn" data-role="ept" onclick="filterRole('ept')">EPT BD Team</button>
+</div>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <div class="nav-item active" data-section="overview" data-roles="all" onclick="nav('overview')">
+        <div class="nav-dot all"></div> Purpose & Scope
+      </div>
+      <div class="nav-item" data-section="team" data-roles="all" onclick="nav('team')">
+        <div class="nav-dot all"></div> Team Structure
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">The Process</div>
+      <div class="nav-item" data-section="receive" data-roles="ept all" onclick="nav('receive')">
+        <div class="nav-dot ept"></div> Receive the JD
+      </div>
+      <div class="nav-item" data-section="log" data-roles="sourcing all" onclick="nav('log')">
+        <div class="nav-dot sourcing"></div> Log Role in CRM
+      </div>
+      <div class="nav-item" data-section="source" data-roles="sourcing all" onclick="nav('source')">
+        <div class="nav-dot sourcing"></div> Source Candidates
+      </div>
+      <div class="nav-item" data-section="match" data-roles="sourcing all" onclick="nav('match')">
+        <div class="nav-dot sourcing"></div> Match CV to JD
+      </div>
+      <div class="nav-item" data-section="handoff" data-roles="sourcing recruiter all" onclick="nav('handoff')">
+        <div class="nav-dot shared"></div> Tag & Hand Off
+      </div>
+      <div class="nav-item" data-section="prescreen" data-roles="recruiter all" onclick="nav('prescreen')">
+        <div class="nav-dot recruiter"></div> Phone Prescreen
+      </div>
+      <div class="nav-item" data-section="salary" data-roles="recruiter all" onclick="nav('salary')">
+        <div class="nav-dot recruiter"></div> Salary Collection
+      </div>
+      <div class="nav-item" data-section="cvprep" data-roles="recruiter sourcing all" onclick="nav('cvprep')">
+        <div class="nav-dot shared"></div> Prepare CV Package
+      </div>
+      <div class="nav-item" data-section="review" data-roles="kishore all" onclick="nav('review')">
+        <div class="nav-dot kishore"></div> Kishore Reviews
+      </div>
+      <div class="nav-item" data-section="submit" data-roles="kishore all" onclick="nav('submit')">
+        <div class="nav-dot kishore"></div> Submit to EPT BD
+      </div>
+      <div class="nav-item" data-section="eptpresents" data-roles="ept all" onclick="nav('eptpresents')">
+        <div class="nav-dot ept"></div> EPT Presents to Client
+      </div>
+      <div class="nav-item" data-section="confirm" data-roles="recruiter all" onclick="nav('confirm')">
+        <div class="nav-dot recruiter"></div> Confirmation Email
+      </div>
+      <div class="nav-item" data-section="schedule" data-roles="recruiter all" onclick="nav('schedule')">
+        <div class="nav-dot recruiter"></div> Brief & Schedule
+      </div>
+      <div class="nav-item" data-section="followup" data-roles="recruiter all" onclick="nav('followup')">
+        <div class="nav-dot recruiter"></div> Post-Interview Follow-up
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reference</div>
+      <div class="nav-item" data-section="salaryrules" data-roles="all" onclick="nav('salaryrules')">
+        <div class="nav-dot all"></div> Salary Rules
+      </div>
+      <div class="nav-item" data-section="employment" data-roles="all" onclick="nav('employment')">
+        <div class="nav-dot all"></div> Employment Types
+      </div>
+      <div class="nav-item" data-section="cvstandards" data-roles="all" onclick="nav('cvstandards')">
+        <div class="nav-dot all"></div> CV Standards
+      </div>
+      <div class="nav-item" data-section="dodont" data-roles="all" onclick="nav('dodont')">
+        <div class="nav-dot all"></div> Do's & Don'ts
+      </div>
+      <div class="nav-item" data-section="reporting" data-roles="all" onclick="nav('reporting')">
+        <div class="nav-dot all"></div> Reporting
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      Merkles × EPT · SOP v1.0<br>Updated May 2026
+    </div>
+  </div>
+
+  <!-- CONTENT PANELS -->
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="section-panel active" id="panel-overview">
+      <div class="sec-eyebrow">Overview</div>
+      <div class="sec-title">Purpose & Scope</div>
+      <div class="sec-sub">This SOP defines how the Merkles team operates its recruitment back-office function for Esha Parama Technology (EPT) in Indonesia. It applies to all Merkles team members at every stage of the recruitment cycle.</div>
+      <div class="stat-strip">
+        <div class="stat-card"><div class="stat-num">24h</div><div class="stat-lbl">EPT's promise to clients for a qualified shortlist — our internal target</div></div>
+        <div class="stat-card"><div class="stat-num">30%</div><div class="stat-lbl">Maximum salary hike allowed from current to expected gross</div></div>
+        <div class="stat-card"><div class="stat-num">100</div><div class="stat-lbl">Jobstreet CV views per recruiter per year — use carefully</div></div>
+        <div class="stat-card"><div class="stat-num">85%</div><div class="stat-lbl">EPT's position fill rate — the bar Merkles is measured against</div></div>
+      </div>
+      <div class="sec-divider"></div>
+      <div class="sub-label">About EPT</div>
+      <div class="body-text">Esha Parama Technology (EPT) is a Jakarta-based recruitment and staffing firm established in 2017. They serve 100+ clients across banking, insurance, financial services, IT, automotive, telecommunications, retail, and more. EPT's Indonesia office is at Office 88 Kasablanka Tower A, South Jakarta. Their India office is in HSR Layout, Bangalore.</div>
+      <div class="body-text">EPT's service model includes contract staffing, permanent staffing, contract-to-hire, RPO, executive search, payroll solutions (99.6% accuracy), and IT solutions. Merkles currently supports their contract staffing and sourcing operations.</div>
+      <div class="note-box tip"><strong>Merkles' role:</strong> We are EPT's India-based recruitment back-office. We operate under EPT's brand and process standards. Everything we produce — CVs, emails, candidate submissions — reflects on EPT's reputation with their clients.</div>
+    </div>
+
+    <!-- TEAM -->
+    <div class="section-panel" id="panel-team">
+      <div class="sec-eyebrow">Overview</div>
+      <div class="sec-title">Team Structure & Responsibilities</div>
+      <div class="sec-sub">The Merkles team has three internal roles plus the EPT BD Team on the client side. Each role owns specific steps in the process.</div>
+      <table class="sop-table">
+        <tr><th>Role</th><th>Who</th><th>Owns</th></tr>
+        <tr><td><strong style="color:var(--teal)">EPT BD Team</strong></td><td>EPT's client-facing staff</td><td>Sends JDs, presents candidates to clients, arranges interviews, provides feedback</td></tr>
+        <tr><td><strong style="color:var(--green)">Merkles Sourcing</strong></td><td>Sourcing Team</td><td>Logs roles, sources from Jobstreet and LinkedIn, does initial CV match, tags in CRM</td></tr>
+        <tr><td><strong style="color:var(--purple)">Merkles Recruiter</strong></td><td>Recruiter</td><td>Phone prescreen, salary collection, CV package preparation, confirmation email, interview coordination</td></tr>
+        <tr><td><strong style="color:var(--amber)">Kishore</strong></td><td>Kishore</td><td>Quality gate — reviews all CVs before EPT submission, approves salary exceptions, escalates to EPT management</td></tr>
+      </table>
+      <div class="note-box tip"><strong>Review chain:</strong> Merkles Sourcing → Merkles Recruiter → Kishore → EPT BD Team → Client. Nothing goes to EPT without passing through Kishore first.</div>
+    </div>
+
+    <!-- RECEIVE JD -->
+    <div class="section-panel" id="panel-receive">
+      <div class="sec-eyebrow">Step 1 · EPT BD Team</div>
+      <div class="sec-title">Receive the Job Description</div>
+      <div class="actor-badge" style="background:var(--teal-l);color:var(--teal-d)">● EPT BD Team sends — Merkles Sourcing receives</div>
+      <div class="body-text">EPT BD Team sends the requirement by email. Do not begin any sourcing activity until all required information is confirmed.</div>
+      <div class="sub-label">What must be in the JD before you proceed</div>
+      <ul class="checklist">
+        <li>Full Job Description with mandatory skills clearly listed</li>
+        <li>Budget stated as "Budget to Consultant" — all-inclusive, whether IC or PKWT</li>
+        <li>Client name and industry</li>
+        <li>Employment type — IC or PKWT</li>
+        <li>Work location and work type (WFO / WFH / hybrid)</li>
+        <li>Expected start date or urgency level</li>
+      </ul>
+      <div class="note-box warning"><strong>If anything is missing:</strong> Reply to EPT BD and ask before doing anything else. Do not guess or assume. A sourced candidate who does not fit the budget wastes everyone's time.</div>
+    </div>
+
+    <!-- LOG ROLE -->
+    <div class="section-panel" id="panel-log">
+      <div class="sec-eyebrow">Step 2 · Merkles Sourcing</div>
+      <div class="sec-title">Log the Role in CRM</div>
+      <div class="actor-badge" style="background:var(--green-l);color:var(--green-d)">● Merkles Sourcing Team</div>
+      <div class="body-text">Create a new role record in the CRM the same day the JD arrives.</div>
+      <div class="sub-label">What to record</div>
+      <ul class="checklist">
+        <li>Job title — use exact wording from the JD</li>
+        <li>Client name and industry</li>
+        <li>Employment type (IC or PKWT)</li>
+        <li>Budget ceiling — gross, all-inclusive</li>
+        <li>Work location and type</li>
+        <li>Date received from EPT</li>
+        <li>Status: set to <strong>Active — Sourcing</strong></li>
+      </ul>
+      <div class="sub-label">File the JD</div>
+      <div class="body-text">Save the original JD in the shared folder. Naming convention:</div>
+      <div class="note-box purple"><strong>EPT_[RoleName]_[ClientName]_[Date]</strong><br>Example: EPT_FrontendDeveloper_AlloBank_050526</div>
+      <div class="note-box tip"><strong>Why this matters:</strong> EPT tracks turnaround time. Delays in logging mean delays in reporting and sourcing — and delays mean missed the 24-hour target.</div>
+    </div>
+
+    <!-- SOURCE -->
+    <div class="section-panel" id="panel-source">
+      <div class="sec-eyebrow">Step 3 · Merkles Sourcing</div>
+      <div class="sec-title">Source Candidates</div>
+      <div class="actor-badge" style="background:var(--green-l);color:var(--green-d)">● Merkles Sourcing Team</div>
+      <div class="sub-label">Sourcing channels and rules</div>
+      <ul class="checklist">
+        <li><strong>Internal CRM first</strong> — always check before going to external job boards. You may already have a tagged candidate from a previous search</li>
+        <li><strong>Jobstreet</strong> — primary Indonesia job board. Hard limit: 100 CV views per recruiter per year. Only open profiles you intend to act on</li>
+        <li><strong>LinkedIn Recruiter Lite</strong> — shared team account. Coordinate internally to avoid messaging the same candidate twice</li>
+      </ul>
+      <div class="note-box warning"><strong>Jobstreet limit:</strong> 100 views per recruiter per year — roughly 2 per week. Do not browse casually. Every view counts against your annual limit.</div>
+      <div class="sub-label">Indonesia sourcing tips</div>
+      <ul class="checklist">
+        <li>Indonesian IT candidates often list skills only in a summary section — not in job descriptions. Flag these as "skills not contextualised" in the CRM note</li>
+        <li>Notice periods: typically 1 month for contract / IC, up to 3 months for permanent. Note this on the candidate record</li>
+        <li>Always record the candidate's current location and WFO willingness</li>
+        <li>Note tenure at each company — frequent short stints need explaining on the call</li>
+      </ul>
+    </div>
+
+    <!-- MATCH -->
+    <div class="section-panel" id="panel-match">
+      <div class="sec-eyebrow">Step 4 · Merkles Sourcing</div>
+      <div class="sec-title">Match CV to JD</div>
+      <div class="actor-badge" style="background:var(--green-l);color:var(--green-d)">● Merkles Sourcing Team</div>
+      <div class="body-text">Before tagging any candidate, verify all five criteria below. If any one fails, do not tag — go back to sourcing.</div>
+      <div class="sub-label">Matching checklist</div>
+      <ul class="checklist">
+        <li>Mandatory skills from the JD appear in the candidate's actual job experience sections — not only in the skills list at the top of the CV</li>
+        <li>Years of relevant experience meet the JD requirement</li>
+        <li>Current or last known salary appears to be within 30% below the budget ceiling</li>
+        <li>Candidate is in the right city or has indicated willingness to relocate / work WFO as required</li>
+        <li>Candidate profile shows openness to IC or PKWT as required by the JD</li>
+      </ul>
+      <div class="note-box warning"><strong>Do not tag a partial match.</strong> A weak submission wastes the Recruiter's prescreen time and damages Merkles' credibility with EPT. It is better to source longer and submit better.</div>
+      <div class="note-box tip"><strong>Skills only in skills list?</strong> Flag the candidate as "skills not contextualised" in your CRM note. The Recruiter will verify on the call — the candidate may still be worth prescreening.</div>
+    </div>
+
+    <!-- HANDOFF -->
+    <div class="section-panel" id="panel-handoff">
+      <div class="sec-eyebrow">Step 5 · Sourcing → Recruiter Handoff</div>
+      <div class="sec-title">Tag in CRM & Hand Off</div>
+      <div class="actor-badge" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)">● Merkles Sourcing tags · Merkles Recruiter picks up</div>
+      <div class="sub-label">Sourcing team — how to hand off correctly</div>
+      <ul class="checklist">
+        <li>Tag the candidate record in the CRM against the open role</li>
+        <li>Set status to: <strong>Ready for Prescreen</strong></li>
+        <li>Add a sourcing note — where the candidate was found and any flags observed</li>
+        <li>Flags to note: skills not contextualised, high salary expectation, currently in PKWT contract, WFO reluctance, multiple active interviews</li>
+        <li>The Recruiter picks this up from the CRM — no need to message separately unless urgent</li>
+      </ul>
+      <div class="note-box handoff"><strong>Handoff point:</strong> Responsibility passes from Merkles Sourcing to Merkles Recruiter here. Sourcing's job on this candidate is done until the CV preparation stage.</div>
+      <div class="sub-label">Recruiter — how to pick up correctly</div>
+      <ul class="checklist">
+        <li>Read the sourcing note before calling the candidate</li>
+        <li>Review the CV against the JD yourself before the call</li>
+        <li>Confirm salary appears within the 30% hike rule</li>
+        <li>Update CRM status to: <strong>Prescreen in Progress</strong></li>
+      </ul>
+    </div>
+
+    <!-- PRESCREEN -->
+    <div class="section-panel" id="panel-prescreen">
+      <div class="sec-eyebrow">Step 6 · Merkles Recruiter</div>
+      <div class="sec-title">Phone Prescreen Call</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter</div>
+      <div class="body-text">Cover the following in this order on every prescreen call.</div>
+      <div class="sub-label">Call script — cover in this order</div>
+      <ul class="checklist">
+        <li>Introduce yourself and Merkles — be clear you are a recruitment firm working on behalf of a client</li>
+        <li>Confirm the candidate is genuinely open to a new opportunity right now</li>
+        <li>Describe the role — title, industry, employment type, location — without naming the client yet</li>
+        <li>Confirm mandatory skills and where they used them (which company, which project, which phase)</li>
+        <li>Ask for current gross salary and expected gross salary</li>
+        <li>Confirm official notice period</li>
+        <li>Ask if they are interviewing elsewhere and whether they have any current offers</li>
+        <li>Ask if they are willing to do a technical test if required</li>
+        <li>Confirm two interview availability slots</li>
+        <li>Rate English communication yourself 1 to 5 based on the call quality</li>
+      </ul>
+      <div class="sub-label">Indonesia-specific notes</div>
+      <ul class="checklist">
+        <li>Candidates almost always quote net salary — you must convert to gross before recording anything</li>
+        <li>"I will think about it" often means no in Indonesian culture — probe gently with a direct follow-up question</li>
+        <li>Candidates rarely give a hard no on the phone — listen for hesitation, not just words</li>
+        <li>Never reveal the client name during the prescreen call</li>
+      </ul>
+      <div class="note-box tip"><strong>WhatsApp first:</strong> If the candidate does not answer your call, send a WhatsApp message immediately after. Indonesian candidates respond to WhatsApp faster than to calls from unknown numbers.</div>
+    </div>
+
+    <!-- SALARY -->
+    <div class="section-panel" id="panel-salary">
+      <div class="sec-eyebrow">Step 7 · Merkles Recruiter</div>
+      <div class="sec-title">Collect Salary and Convert to Gross</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter</div>
+      <div class="note-box warning"><strong>Critical rule:</strong> Indonesian candidates almost always give you their net (take-home) salary. You must convert this to gross before recording or submitting anything to EPT.</div>
+      <div class="sub-label">The 30% rule</div>
+      <div class="calc-box">
+        <h4>Salary hike calculation — gross to gross only</h4>
+        <div class="calc-row"><span class="lbl">Current gross (example)</span><span class="val">Rp 10,000,000</span></div>
+        <div class="calc-row"><span class="lbl">Maximum hike allowed</span><span class="val">30%</span></div>
+        <div class="calc-row result"><span class="lbl">Maximum expected gross you can submit</span><span class="val">Rp 13,000,000</span></div>
+      </div>
+      <div class="sub-label">How to convert net to gross</div>
+      <ul class="checklist">
+        <li>Open the EPT Salary and Tax Calculator spreadsheet</li>
+        <li>Use <strong>TER A</strong> for single / no dependants (PTKP TK/0)</li>
+        <li>Use <strong>TER B</strong> for married, no dependants (PTKP K/0)</li>
+        <li>Use <strong>TER C</strong> for married with dependants (PTKP K/1, K/2 or K/3)</li>
+        <li>Input the net figure the candidate gave you and read the gross equivalent</li>
+        <li>Record both current gross and expected gross in the CRM</li>
+      </ul>
+      <div class="note-box warning"><strong>If the 30% rule is exceeded or budget ceiling is hit:</strong> Flag to Kishore immediately. Do not proceed to CV preparation without his decision. Kishore will escalate to EPT management if required.</div>
+    </div>
+
+    <!-- CV PREP -->
+    <div class="section-panel" id="panel-cvprep">
+      <div class="sec-eyebrow">Step 8 · Recruiter + Sourcing Support</div>
+      <div class="sec-title">Prepare the CV Package</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter leads · Sourcing supports</div>
+      <div class="note-box warning"><strong>Most common rejection reason:</strong> Skills and technologies listed only in the skills section at the top — not in the job experience sections. If this is the case, ask the candidate to revise and resubmit before you prepare the package.</div>
+      <div class="sub-label">Mandatory checklist — every item before sending to Kishore</div>
+      <ul class="checklist">
+        <li>Skills and technologies appear in the actual job experience sections of the CV — not only in the skills list at the top</li>
+        <li>Apply <strong>yellow highlight</strong> to all mandatory JD technologies wherever they appear in experience sections</li>
+        <li>Remove phone number, email address, and LinkedIn URL from the CV</li>
+        <li>Add salary details on every page — current gross and expected gross</li>
+        <li>Rename the file using the correct convention</li>
+      </ul>
+      <div class="note-box purple"><strong>File naming:</strong> EPT_[RoleName]_[CandidateFirstName]<br>Example: EPT_FrontendDeveloper_Ivano</div>
+      <div class="sub-label">Sourcing Team support at this stage</div>
+      <div class="body-text">Sourcing can assist with formatting — applying highlights, removing contacts, renaming the file. The Recruiter is accountable for the final quality check before it goes to Kishore.</div>
+      <div class="note-box tip"><strong>Do not send to Kishore until every item is checked.</strong> A rejected CV comes back to you and delays the EPT submission — which delays the 24-hour target.</div>
+    </div>
+
+    <!-- KISHORE REVIEW -->
+    <div class="section-panel" id="panel-review">
+      <div class="sec-eyebrow">Step 9 · Kishore</div>
+      <div class="sec-title">Kishore Reviews the CV Package</div>
+      <div class="actor-badge" style="background:var(--amber-l);color:var(--amber-d)">● Kishore</div>
+      <div class="body-text">This is the quality gate before anything goes to EPT. Kishore reviews every CV submission before it leaves Merkles.</div>
+      <div class="sub-label">What Kishore checks</div>
+      <ul class="checklist">
+        <li>CV naming convention is correct</li>
+        <li>Yellow highlights are applied accurately to mandatory skills in experience sections — not the skills list</li>
+        <li>Contact details have been stripped</li>
+        <li>Salary figures appear on every page in gross terms</li>
+        <li>30% hike rule is satisfied — or a documented reason exists</li>
+        <li>Budget ceiling is not exceeded — or escalation to EPT management has been arranged</li>
+        <li>Overall candidate quality genuinely matches JD requirements</li>
+      </ul>
+      <div class="sub-label">If rejected</div>
+      <div class="body-text">Kishore returns to the Recruiter with specific feedback. The Recruiter either fixes the CV or returns to sourcing a new candidate. The process repeats from the relevant step.</div>
+      <div class="note-box tip"><strong>Why this gate exists:</strong> A poor submission reflects on the entire Merkles team — not just the person who prepared it. Kishore's review protects our reputation with EPT.</div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="section-panel" id="panel-submit">
+      <div class="sec-eyebrow">Step 10 · Kishore</div>
+      <div class="sec-title">Submit to EPT BD Team</div>
+      <div class="actor-badge" style="background:var(--amber-l);color:var(--amber-d)">● Kishore</div>
+      <div class="sub-label">What to include in the submission email</div>
+      <ul class="checklist">
+        <li>Formatted CV — named correctly, highlights applied, contacts removed</li>
+        <li>Completed EPT Candidate Details table</li>
+        <li>Current gross and expected gross salary clearly stated</li>
+        <li>Two interview availability slots</li>
+        <li>English communication rating (1 to 5)</li>
+        <li>Any relevant notes: competing offers, test readiness, relocation status, current contract end date</li>
+      </ul>
+      <div class="sub-label">Email format</div>
+      <div class="note-box purple">
+        <strong>To:</strong> EPT BD Team contact<br>
+        <strong>CC:</strong> Kishore<br>
+        <strong>Subject:</strong> [Role] — Candidate Submission — [CandidateName]
+      </div>
+    </div>
+
+    <!-- EPT PRESENTS -->
+    <div class="section-panel" id="panel-eptpresents">
+      <div class="sec-eyebrow">Step 11 · EPT BD Team</div>
+      <div class="sec-title">EPT Presents to Their Client</div>
+      <div class="actor-badge" style="background:var(--teal-l);color:var(--teal-d)">● EPT BD Team — Merkles waits and stays warm</div>
+      <div class="body-text">EPT BD reviews the submission and presents the candidate profile to their end client. This step is outside Merkles' control.</div>
+      <div class="sub-label">What Merkles does while waiting</div>
+      <ul class="checklist">
+        <li>Allow 2 business days before sending a polite follow-up email to EPT BD asking for status</li>
+        <li>Do not follow up daily — it signals impatience and damages the relationship</li>
+        <li>Keep the candidate warm: send a brief message — "We have submitted your profile and will update you shortly"</li>
+      </ul>
+      <div class="sub-label">If the client is not interested</div>
+      <ul class="checklist">
+        <li>EPT will inform Kishore</li>
+        <li>Update candidate CRM status to: Not Proceeded</li>
+        <li>Ask EPT BD if they can share the reason — this improves future submissions</li>
+        <li>Return to sourcing a fresh candidate — repeat from Step 3</li>
+      </ul>
+      <div class="note-box tip"><strong>Indonesian candidate management:</strong> A candidate left in silence for more than 3 business days will start interviewing elsewhere. Keep them engaged even while you wait for EPT feedback.</div>
+    </div>
+
+    <!-- CONFIRM -->
+    <div class="section-panel" id="panel-confirm">
+      <div class="sec-eyebrow">Step 12 · Merkles Recruiter</div>
+      <div class="sec-title">Send the Confirmation Email</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter</div>
+      <div class="note-box warning"><strong>Only send after EPT confirms the client wants to interview.</strong> Never send this email speculatively.</div>
+      <div class="sub-label">What the email must confirm</div>
+      <ul class="checklist">
+        <li>Client name and industry</li>
+        <li>Job title</li>
+        <li>Employment type (IC or PKWT)</li>
+        <li>Contract duration if applicable</li>
+        <li>Work location and type (WFO / WFH / hybrid)</li>
+        <li>Salary offered — gross</li>
+        <li>Benefits — or state Nil</li>
+        <li>Notice period expected</li>
+        <li>Interview date and time — or two available slots</li>
+        <li>Whether there is a technical test involved</li>
+      </ul>
+      <div class="sub-label">Required reply from candidate</div>
+      <div class="note-box purple">The candidate must reply with exactly:<br><br><strong>"Confirmed"</strong><br><br>or<br><br><strong>"I confirm my interest and commitment"</strong><br><br>Any vague reply like "okay sounds good" does not count. Follow up until you receive the exact wording.</div>
+      <div class="body-text">Once the candidate confirms, terms are locked. No renegotiation is possible after this point — on salary, location, or any other condition.</div>
+      <div class="sub-label">After confirmation is received</div>
+      <ul class="checklist">
+        <li>Forward the actual email reply — not a summary — to EPT BD team</li>
+        <li>Subject: [Role] — Candidate Confirmation — [CandidateName]</li>
+        <li>Save a copy in the CRM against the candidate record</li>
+      </ul>
+      <div class="note-box tip"><strong>Why save it:</strong> If there is ever a dispute about what the candidate agreed to, this email is your evidence.</div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="section-panel" id="panel-schedule">
+      <div class="sec-eyebrow">Step 13 · Merkles Recruiter</div>
+      <div class="sec-title">Brief the Candidate & Confirm Interview</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter</div>
+      <div class="body-text">When EPT sends the confirmed interview slot, call the candidate immediately. Do not just send an email.</div>
+      <div class="sub-label">Pre-interview briefing — cover all of these on the call</div>
+      <ul class="checklist">
+        <li>Confirm the exact date, time, and platform</li>
+        <li>Join 10 minutes early on a laptop — not a phone</li>
+        <li>Stable internet connection, quiet room, good lighting, camera on</li>
+        <li>Dress professionally even for video interviews</li>
+        <li>Remind them about any technical test if one was mentioned</li>
+        <li>Re-confirm the client name and what the company does — brief them on the industry context</li>
+        <li>Tell them not to contact the client or EPT directly about feedback — all communication goes through Merkles</li>
+        <li>End the call with: "Has anything changed since we last spoke that I should know about?"</li>
+      </ul>
+      <div class="sub-label">On the day of the interview</div>
+      <div class="note-box tip"><strong>WhatsApp reminder:</strong> Send 30 to 60 minutes before the interview — "Just a reminder — your interview is today at [time]. Best of luck! I will check in with you after." This dramatically reduces no-shows in Indonesia.</div>
+      <ul class="checklist">
+        <li>Update CRM status to: <strong>Interview Scheduled</strong></li>
+        <li>Log the interview date and time in the candidate record</li>
+        <li>Message the candidate after the interview to ask how it went</li>
+      </ul>
+    </div>
+
+    <!-- FOLLOW UP -->
+    <div class="section-panel" id="panel-followup">
+      <div class="sec-eyebrow">Step 14 · Merkles Recruiter</div>
+      <div class="sec-title">Post-Interview Follow-up</div>
+      <div class="actor-badge" style="background:var(--purple-l);color:var(--purple-d)">● Merkles Recruiter</div>
+      <div class="sub-label">Immediately after the interview date</div>
+      <ul class="checklist">
+        <li>Update candidate status to: <strong>Interviewed — Awaiting Feedback</strong></li>
+        <li>Send a brief check-in to the candidate — ask how it went, note their impression</li>
+        <li>Wait 2 business days then follow up with EPT BD for client feedback</li>
+        <li>Follow up every 2 business days after that until you have a definitive answer</li>
+      </ul>
+      <div class="sub-label">Possible outcomes</div>
+      <table class="sop-table">
+        <tr><th>Outcome</th><th>What to do</th></tr>
+        <tr><td><strong>Offer extended</strong></td><td>Coordinate with EPT BD on offer details. Update CRM to: Offer Stage</td></tr>
+        <tr><td><strong>Second interview</strong></td><td>Repeat Steps 12 and 13</td></tr>
+        <tr><td><strong>Candidate rejected</strong></td><td>Update CRM to: Not Selected. Keep candidate warm for future roles</td></tr>
+        <tr><td><strong>No EPT response</strong></td><td>Follow up every 2 business days politely until definitive answer</td></tr>
+        <tr><td><strong>Candidate withdraws</strong></td><td>Note reason in CRM. Inform EPT BD. Return to sourcing</td></tr>
+      </table>
+      <div class="note-box tip"><strong>Always close the loop with the candidate regardless of outcome.</strong> A rejected candidate treated with respect becomes a referral source. This is especially important in Indonesian professional culture where reputation spreads quickly through networks.</div>
+    </div>
+
+    <!-- SALARY RULES -->
+    <div class="section-panel" id="panel-salaryrules">
+      <div class="sec-eyebrow">Reference</div>
+      <div class="sec-title">Salary Rules — Quick Reference</div>
+      <div class="sec-sub">These rules apply to every candidate submission without exception. Kishore enforces all of them at the review gate.</div>
+      <table class="sop-table">
+        <tr><th>Rule</th><th>Detail</th></tr>
+        <tr><td><strong>Always gross</strong></td><td>All salary figures must be in gross terms only. Never submit net salary figures to EPT.</td></tr>
+        <tr><td><strong>30% maximum hike</strong></td><td>Maximum increase from current gross to expected gross is 30%. Calculated gross-to-gross only — never net-to-net.</td></tr>
+        <tr><td><strong>Use the calculator</strong></td><td>Use the EPT Salary and Tax Calculator to convert any net salary a candidate quotes into gross. Use the correct TER sheet.</td></tr>
+        <tr><td><strong>TER A</strong></td><td>Single / no dependants (PTKP TK/0) — lowest tax rates.</td></tr>
+        <tr><td><strong>TER B</strong></td><td>Married, no dependants (PTKP K/0).</td></tr>
+        <tr><td><strong>TER C</strong></td><td>Married with dependants (PTKP K/1, K/2 or K/3).</td></tr>
+        <tr><td><strong>Budget is the ceiling</strong></td><td>The budget shared by EPT is all-inclusive — whether IC or PKWT. Do not exceed without approval.</td></tr>
+        <tr><td><strong>Exceptions need approval</strong></td><td>Any candidate above 30% hike or exceeding budget must be flagged to Kishore before proceeding. Kishore escalates to EPT management.</td></tr>
+        <tr><td><strong>Salary on every page</strong></td><td>Current gross and expected gross must appear on every page of the submitted CV — not just the first page.</td></tr>
+      </table>
+      <div class="calc-box">
+        <h4>30% rule — worked example</h4>
+        <div class="calc-row"><span class="lbl">Candidate's net salary (what they told you)</span><span class="val">Rp 8,500,000</span></div>
+        <div class="calc-row"><span class="lbl">Converted gross (using TER A calculator)</span><span class="val">Rp 10,000,000</span></div>
+        <div class="calc-row"><span class="lbl">30% of current gross</span><span class="val">Rp 3,000,000</span></div>
+        <div class="calc-row result"><span class="lbl">Maximum expected gross you can submit</span><span class="val">Rp 13,000,000</span></div>
+      </div>
+    </div>
+
+    <!-- EMPLOYMENT TYPES -->
+    <div class="section-panel" id="panel-employment">
+      <div class="sec-eyebrow">Reference</div>
+      <div class="sec-title">Indonesia Employment Types</div>
+      <div class="sec-sub">Your team will encounter three employment types. The type affects salary calculation, candidate expectations, confirmation email content, and tax treatment.</div>
+      <div class="emp-cards">
+        <div class="emp-card" style="background:var(--purple-l);border-color:#AFA9EC">
+          <h4 style="color:var(--purple)">IC — Independent Consultant</h4>
+          <ul>
+            <li>Not an employee — civil and commercial contract only</li>
+            <li>Payment is called a Fee, not a salary</li>
+            <li>Responsible for own tax (PPh 21 or PPh 23)</li>
+            <li>Not entitled to BPJS or leave benefits</li>
+            <li>No probation period, no severance</li>
+            <li>Most contract IT roles in Indonesia are IC</li>
+          </ul>
+        </div>
+        <div class="emp-card" style="background:var(--teal-l);border-color:#5DCAA5">
+          <h4 style="color:var(--teal)">PKWT — Fixed Term</h4>
+          <ul>
+            <li>Formal employment contract — maximum 5 years total</li>
+            <li>No probation period allowed</li>
+            <li>Must be in writing in Indonesian language</li>
+            <li>Ends automatically when period expires</li>
+            <li>Generally no severance unless specified</li>
+            <li>If violated, may convert automatically to PKWTT</li>
+          </ul>
+        </div>
+        <div class="emp-card" style="background:var(--green-l);border-color:#C0DD97">
+          <h4 style="color:var(--green)">PKWTT — Permanent</h4>
+          <ul>
+            <li>No end date — permanent employment</li>
+            <li>Maximum 3 months probation</li>
+            <li>Entitled to severance pay on termination</li>
+            <li>Mandatory BPJS Kesehatan and Ketenagakerjaan</li>
+            <li>Minimum regional wage applies</li>
+            <li>Rare in Merkles' current scope</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note-box tip"><strong>During prescreen:</strong> Always confirm which employment type the candidate is comfortable with. IC candidates may not want to be PKWT and vice versa — confirming this early avoids late-stage dropouts.</div>
+    </div>
+
+    <!-- CV STANDARDS -->
+    <div class="section-panel" id="panel-cvstandards">
+      <div class="sec-eyebrow">Reference</div>
+      <div class="sec-title">CV Preparation Standards</div>
+      <div class="sec-sub">Every CV submitted to EPT must meet these standards. Kishore will reject any submission that does not comply with every item.</div>
+      <table class="sop-table">
+        <tr><th>#</th><th>Standard</th><th>Detail</th></tr>
+        <tr><td>1</td><td><strong>Skills in experience sections</strong></td><td>Skills and technologies must appear in the actual job and project sections — not only in the skills list at the top. If only in the skills list, ask the candidate to revise and resubmit before proceeding.</td></tr>
+        <tr><td>2</td><td><strong>Yellow highlight</strong></td><td>Apply yellow highlight to all mandatory JD technologies wherever they appear in the experience sections of the CV.</td></tr>
+        <tr><td>3</td><td><strong>Remove contact details</strong></td><td>Remove phone number, email address, and LinkedIn URL. No personally identifiable contact information on the submitted CV.</td></tr>
+        <tr><td>4</td><td><strong>Salary on every page</strong></td><td>Current gross and expected gross salary must appear on every page — not only the first page.</td></tr>
+        <tr><td>5</td><td><strong>File naming</strong></td><td>EPT_[RoleName]_[CandidateFirstName] — example: EPT_FrontendDeveloper_Ivano</td></tr>
+        <tr><td>6</td><td><strong>File format</strong></td><td>Word document (.docx) unless EPT specifies otherwise.</td></tr>
+      </table>
+    </div>
+
+    <!-- DO DONT -->
+    <div class="section-panel" id="panel-dodont">
+      <div class="sec-eyebrow">Reference</div>
+      <div class="sec-title">Do's & Don'ts</div>
+      <div class="sec-sub">Quick reference for every Merkles team member.</div>
+      <div class="do-dont">
+        <div class="do-col">
+          <div class="col-head">Always do this</div>
+          <ul class="col-body">
+            <li>Log the role in CRM on the day it arrives</li>
+            <li>Check the internal CRM before going to Jobstreet</li>
+            <li>Convert salary to gross before recording anything</li>
+            <li>Flag any 30% hike exception to Kishore before proceeding</li>
+            <li>Ask the candidate to revise their CV if skills are only in the skills list</li>
+            <li>Keep the candidate warm with brief updates while waiting</li>
+            <li>Get the written email confirmation before the interview proceeds</li>
+            <li>Send a WhatsApp reminder 30 to 60 minutes before every interview</li>
+            <li>Always close the loop with the candidate regardless of outcome</li>
+            <li>Follow up with EPT BD every 2 business days if no feedback received</li>
+            <li>Coordinate with your team before messaging a candidate on LinkedIn</li>
+          </ul>
+        </div>
+        <div class="dont-col">
+          <div class="col-head">Never do this</div>
+          <ul class="col-body">
+            <li>Start sourcing before confirming all JD details</li>
+            <li>Open Jobstreet profiles out of curiosity — every view uses your annual limit</li>
+            <li>Submit net salary figures to EPT</li>
+            <li>Proceed with an over-budget candidate without Kishore's approval</li>
+            <li>Highlight skills that only appear in the skills list section</li>
+            <li>Reveal the client name during the prescreen call</li>
+            <li>Accept "okay sounds good" as a valid written confirmation</li>
+            <li>Leave a candidate in silence for more than 3 business days</li>
+            <li>Follow up with EPT BD daily — it damages the relationship</li>
+            <li>Let a candidate contact the client or EPT directly</li>
+            <li>Submit a CV to EPT without Kishore's approval</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTING -->
+    <div class="section-panel" id="panel-reporting">
+      <div class="sec-eyebrow">Reference</div>
+      <div class="sec-title">Reporting Requirements</div>
+      <div class="sec-sub">All Merkles team members must maintain the following reports. Kishore reviews these to ensure EPT's performance standards are met.</div>
+      <table class="sop-table">
+        <tr><th>Report</th><th>Frequency</th><th>What to include</th></tr>
+        <tr><td><strong>Candidates contacted</strong></td><td>Daily</td><td>Candidate name, role, channel used, outcome of contact attempt</td></tr>
+        <tr><td><strong>Performance report</strong></td><td>Daily</td><td>Roles active, candidates sourced, prescreens completed, CVs submitted to Kishore</td></tr>
+        <tr><td><strong>Performance report</strong></td><td>Weekly</td><td>Week totals, roles filled, pipeline status per open role, Jobstreet views used</td></tr>
+        <tr><td><strong>Performance report</strong></td><td>Monthly</td><td>Monthly placement rate, total Jobstreet usage, conversion from prescreen to submission</td></tr>
+        <tr><td><strong>Performance report</strong></td><td>Quarterly</td><td>Quarterly review against EPT's 85% fill rate target, candidate quality feedback received from EPT</td></tr>
+      </table>
+      <div class="note-box tip"><strong>Jobstreet tracking:</strong> Log every CV view in the monthly report. Each recruiter has a hard limit of 100 views per year. At 100 views per year that is roughly 8 per month or 2 per week. Track your running total.</div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<script>
+let currentRole = 'all';
+
+function nav(section) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  const navEl = document.querySelector(`.nav-item[data-section="${section}"]`);
+  const panel = document.getElementById(`panel-${section}`);
+  if (navEl) navEl.classList.add('active');
+  if (panel) { panel.classList.add('active'); panel.parentElement.scrollTop = 0; }
+}
+
+function filterRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.role-btn[data-role="${role}"]`).classList.add('active');
+
+  const navItems = document.querySelectorAll('.nav-item[data-roles]');
+  navItems.forEach(item => {
+    const roles = item.getAttribute('data-roles').split(' ');
+    if (role === 'all' || roles.includes(role) || roles.includes('all')) {
+      item.classList.remove('hidden');
+    } else {
+      item.classList.add('hidden');
+      if (item.classList.contains('active')) {
+        item.classList.remove('active');
+        nav('overview');
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
