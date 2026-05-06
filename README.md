@@ -8,7 +8,7 @@ Internal tools for the Merkles team supporting EPT (Esha Parama Technology) recr
 
 | Tool | Link | What it does |
 |---|---|---|
-| Knowledge Base Agent | [Open →](https://kishoremohanraj85sm.github.io/merkles-tools/Merkles_Knowledge_Base_Agent_v1.3.html) | Ask questions, match CVs, format JDs, generate prescreen scripts |
+| Knowledge Base Agent | [Open →](https://kishoremohanraj85sm.github.io/merkles-tools/Merkles_Knowledge_Base_Agent_v1.4.html) | Ask questions, match CVs, format JDs, generate prescreen scripts |
 | Recruitment Workflow | [Open →](https://kishoremohanraj85sm.github.io/merkles-tools/Merkles_EPT_Workflow_v1.1.html) | 17-step process guide — click any step for instructions |
 | Standard Operating Procedure | [Open →](https://kishoremohanraj85sm.github.io/merkles-tools/Merkles_EPT_SOP_v1.1.html) | Full SOP with role filter — view by Sourcing, Recruiter, or Kishore |
 
